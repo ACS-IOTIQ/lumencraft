@@ -1,4 +1,5 @@
 import AdminShell from "@/components/admin/AdminShell";
+import CopyBtn from "@/components/admin/CopyBtn";
 import { deleteMediaAction, uploadMediaAction } from "@/app/admin/actions";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -11,6 +12,9 @@ export default async function AdminMediaPage({
   await requireAdmin();
   const params = await searchParams;
   const assets = await prisma.mediaAsset.findMany({ orderBy: { createdAt: "desc" } });
+
+  const publicEndpoint = (process.env.S3_PUBLIC_ENDPOINT ?? "http://localhost:9000").replace(/\/$/, "");
+  const bucket = process.env.S3_BUCKET ?? "lumencraft-assets";
 
   return (
     <AdminShell title="Media Library">
@@ -31,21 +35,29 @@ export default async function AdminMediaPage({
       </form>
 
       <div className="grid gap-4">
-        {assets.map((asset) => (
-          <article key={asset.id} className="grid gap-4 border border-black/10 bg-white p-5 md:grid-cols-[1fr_auto]">
-            <div>
-              <h3 className="font-semibold">{asset.filename}</h3>
-              <p className="mt-1 text-sm text-black/55">
-                {asset.kind} / {asset.contentType} / {(asset.size / 1024).toFixed(1)} KB
-              </p>
-              <p className="mt-1 break-all font-mono text-xs text-black/45">{asset.key}</p>
-            </div>
-            <form action={deleteMediaAction}>
-              <input type="hidden" name="id" value={asset.id} />
-              <button className="border border-black/15 px-4 py-2 text-sm font-semibold">Delete</button>
-            </form>
-          </article>
-        ))}
+        {assets.map((asset) => {
+          const publicUrl = asset.url ?? `${publicEndpoint}/${bucket}/${asset.key}`;
+          return (
+            <article key={asset.id} className="grid gap-4 border border-black/10 bg-white p-5 md:grid-cols-[1fr_auto]">
+              <div className="min-w-0">
+                <h3 className="font-semibold">{asset.filename}</h3>
+                <p className="mt-1 text-sm text-black/55">
+                  {asset.kind} / {asset.contentType} / {(asset.size / 1024).toFixed(1)} KB
+                </p>
+                <p className="mt-1 break-all font-mono text-xs text-black/45">{asset.key}</p>
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="text-xs font-medium text-black/40">Link:</span>
+                  <span className="min-w-0 flex-1 truncate font-mono text-xs text-black/60">{publicUrl}</span>
+                  <CopyBtn text={publicUrl} />
+                </div>
+              </div>
+              <form action={deleteMediaAction}>
+                <input type="hidden" name="id" value={asset.id} />
+                <button className="border border-black/15 px-4 py-2 text-sm font-semibold">Delete</button>
+              </form>
+            </article>
+          );
+        })}
       </div>
     </AdminShell>
   );
