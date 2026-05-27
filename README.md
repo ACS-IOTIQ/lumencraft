@@ -1,36 +1,112 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Lumencraft Landing Page
 
-## Getting Started
+A modern, responsive landing page for Lumencraft - architectural lighting solutions company.
 
-First, run the development server:
+## 🚀 Features
+
+- **Dark Modern Header** - Sticky navigation with search functionality
+- **Hero Section** - Eye-catching "Let's talk LIGHT" hero with gradient background and animated light beams
+- **Expertise Section** - Company overview and capabilities
+- **Services** - Dedicated services and products sections with icons
+- **Featured Products** - Interactive carousel showcasing DRAGO lighting products with real images
+- **Statistics Banner** - Key metrics and achievements
+- **Why Choose Us** - Four key value propositions with icons
+- **Featured Projects** - Gallery of architectural lighting projects with hover effects
+- **Technology Partners** - Partner logos with industry tags
+- **Contact CTA** - Call-to-action section
+- **Professional Footer** - Complete footer with navigation and social links
+
+## 🛠️ Tech Stack
+
+- **Next.js 16** - React framework with App Router
+- **TypeScript** - Type-safe development
+- **Tailwind CSS** - Utility-first styling
+- **Unsplash Images** - High-quality stock images for products and projects
+
+## 📦 Getting Started
 
 ```bash
+# Development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# Build for production
+npm run build
+
+# Start production server
+npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to view the site.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📁 Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+lumencraft-landing/
+├── app/
+│   ├── page.tsx          # Main landing page
+│   ├── layout.tsx        # Root layout
+│   └── globals.css       # Global styles
+├── components/
+│   ├── Header.tsx        # Navigation header
+│   ├── Hero.tsx          # Hero section
+│   ├── Expertise.tsx     # Company expertise
+│   ├── Services.tsx      # Services section
+│   ├── FeaturedProducts.tsx  # Product carousel
+│   ├── Stats.tsx         # Statistics banner
+│   ├── WhyChooseUs.tsx   # Value propositions
+│   ├── FeaturedProjects.tsx  # Project gallery
+│   ├── TechnologyPartners.tsx # Partner logos
+│   ├── Contact.tsx       # CTA section
+│   └── Footer.tsx        # Footer
+└── next.config.ts        # Next.js configuration
+```
 
-## Learn More
+## 🎨 Customization
 
-To learn more about Next.js, take a look at the following resources:
+### Replace Images
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**Products:** Edit `components/FeaturedProducts.tsx` - Update the `products` array:
+```typescript
+const products = [
+  {
+    id: 1,
+    name: "Your Product Name",
+    type: "Product Type",
+    image: "/images/product1.jpg" // or Unsplash URL
+  },
+];
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Projects:** Edit `components/FeaturedProjects.tsx` - Update the `projects` array:
+```typescript
+const projects = [
+  {
+    id: 1,
+    name: "Project Name",
+    location: "Location",
+    image: "/images/project1.jpg"
+  },
+];
+```
 
-## Deploy on Vercel
+### Colors & Branding
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Hero gradient: `components/Hero.tsx`
+- Stats banner: `components/Stats.tsx` (blue-600)
+- All text content is in component files for easy editing
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📱 Responsive Design
+
+Fully responsive across all devices:
+- Mobile: Single column
+- Tablet: 2-column grids
+- Desktop: Full layouts
+
+## 🚀 Deploy on Vercel
+
+```bash
+npm install -g vercel
+vercel
+```
+
+Or use the [Vercel Platform](https://vercel.com/new) - import from Git.
