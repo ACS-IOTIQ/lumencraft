@@ -1,0 +1,95 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: lumencraft-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: lumencraft
+      POSTGRES_PASSWORD: lumencraft
+      POSTGRES_DB: lumencraft
+    volumes:
+      - lumencraft-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lumencraft -d lumencraft"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  minio:
+    image: minio/minio:latest
+    container_name: lumencraft-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: lumencraft
+      MINIO_ROOT_PASSWORD: lumencraft-password
+    ports:
+      - "9100:9000"
+      - "9101:9001"
+    volumes:
+      - lumencraft-minio:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: lumencraft-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 lumencraft lumencraft-password;
+      mc mb --ignore-existing local/lumencraft-assets;
+      mc anonymous set download local/lumencraft-assets;
+      exit 0;
+      "
+
+  app:
+    build:
+      context: ..
+      dockerfile: prd/Dockerfile
+    image: lumencraft-app:latest
+    container_name: lumencraft-app
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: "postgresql://lumencraft:lumencraft@postgres:5432/lumencraft?schema=public"
+      S3_ENDPOINT: "http://minio:9000"
+      S3_FORCE_PATH_STYLE: "true"
+      NEXT_TELEMETRY_DISABLED: "1"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: lumencraft-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - lumencraft-caddy-data:/data
+      - lumencraft-caddy-config:/config
+    depends_on:
+      - app
+
+volumes:
+  lumencraft-postgres:
+  lumencraft-minio:
+  lumencraft-caddy-data:
+  lumencraft-caddy-config:
