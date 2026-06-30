@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import type {
   BlogCategory,
   BlogPost,
@@ -254,19 +255,19 @@ export async function seedDraftContent() {
   await prisma.siteSetting.upsert({
     where: { key: "about_page" },
     update: {},
-    create: { key: "about_page", value: seedContent.aboutPage as unknown as Record<string, unknown> },
+    create: { key: "about_page", value: seedContent.aboutPage as Prisma.InputJsonValue },
   });
 
   await prisma.siteSetting.upsert({
     where: { key: "services_page" },
     update: {},
-    create: { key: "services_page", value: seedContent.servicesPage as unknown as Record<string, unknown> },
+    create: { key: "services_page", value: seedContent.servicesPage as Prisma.InputJsonValue },
   });
 
   await prisma.siteSetting.upsert({
     where: { key: "contact_page" },
     update: {},
-    create: { key: "contact_page", value: seedContent.contactPage as unknown as Record<string, unknown> },
+    create: { key: "contact_page", value: seedContent.contactPage as Prisma.InputJsonValue },
   });
 
   if ((await prisma.projectCategory.count()) === 0) {
@@ -430,8 +431,8 @@ export async function publishDraftSite() {
   const site = await serializeDraftSite();
   return prisma.publishedSnapshot.upsert({
     where: { key: SITE_SNAPSHOT_KEY },
-    update: { data: site, publishedAt: new Date() },
-    create: { key: SITE_SNAPSHOT_KEY, data: site },
+    update: { data: site as Prisma.InputJsonValue, publishedAt: new Date() },
+    create: { key: SITE_SNAPSHOT_KEY, data: site as Prisma.InputJsonValue },
   });
 }
 

@@ -1,4 +1,5 @@
 import { headers } from "next/headers";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 export async function getRequestIp(): Promise<string | null> {
@@ -35,7 +36,7 @@ export async function logAudit(params: {
         entityType: params.entityType ?? null,
         entityId: params.entityId ?? null,
         description: params.description,
-        metadata: params.metadata ?? {},
+        metadata: (params.metadata ?? {}) as Prisma.InputJsonValue,
         ipAddress: params.ipAddress ?? null,
       },
     });

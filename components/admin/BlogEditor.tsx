@@ -474,7 +474,7 @@ export default function BlogEditor({
         <div className="border-b border-black/10 px-6 py-4">
           <h2 className="text-xl font-semibold">Article Content</h2>
         </div>
-        <EditorToolbar editor={editor} onInsertImage={() => setShowImageDialog(true)} />
+        <EditorToolbar editor={editor!} onInsertImage={() => setShowImageDialog(true)} />
         <EditorContent
           editor={editor}
           className="prose prose-sm max-w-none min-h-[400px] px-6 py-5 text-sm leading-relaxed outline-none [&_.ProseMirror]:min-h-[380px] [&_.ProseMirror]:outline-none [&_.ProseMirror_table]:w-full [&_.ProseMirror_table]:border-collapse [&_.ProseMirror_td]:border [&_.ProseMirror_td]:border-black/20 [&_.ProseMirror_td]:px-2 [&_.ProseMirror_td]:py-1 [&_.ProseMirror_th]:border [&_.ProseMirror_th]:border-black/20 [&_.ProseMirror_th]:bg-[#f5f5f3] [&_.ProseMirror_th]:px-2 [&_.ProseMirror_th]:py-1 [&_.ProseMirror_blockquote]:border-l-4 [&_.ProseMirror_blockquote]:border-black/20 [&_.ProseMirror_blockquote]:pl-4 [&_.ProseMirror_blockquote]:text-black/60 [&_.ProseMirror_pre]:rounded [&_.ProseMirror_pre]:bg-[#f5f5f3] [&_.ProseMirror_pre]:p-4 [&_.ProseMirror_img]:max-w-full [&_.ProseMirror_img]:rounded [&_.ProseMirror_p.is-editor-empty:first-child::before]:text-black/30 [&_.ProseMirror_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)]"

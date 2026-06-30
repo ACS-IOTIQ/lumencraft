@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { clearAdminSession, createAdminSession, ensureBootstrapAdmin, requireAdmin } from "@/lib/auth";
 import { publishDraftSite, seedDraftContent } from "@/lib/admin-cms";
@@ -224,11 +225,11 @@ const productSchema = z.object({
   isActive: z.boolean().default(false),
   isFeatured: z.boolean().default(false),
   badges: z.array(z.string()).default([]),
-  keyDetails: z.array(z.unknown()).default([]),
-  basicSpecs: z.array(z.unknown()).default([]),
-  technicalDetails: z.array(z.unknown()).default([]),
-  installationMethods: z.array(z.unknown()).default([]),
-  availableModels: z.array(z.unknown()).default([]),
+  keyDetails: z.array(z.any()).default([]),
+  basicSpecs: z.array(z.any()).default([]),
+  technicalDetails: z.array(z.any()).default([]),
+  installationMethods: z.array(z.any()).default([]),
+  availableModels: z.array(z.any()).default([]),
   images: z.array(z.string()).default([]),
   iesMediaId: z.string().optional(),
   datasheetMediaId: z.string().optional(),
@@ -337,8 +338,8 @@ async function handleSaveHomepage(request: NextRequest) {
     if (body.contact !== undefined) {
       await prisma.siteSetting.upsert({
         where: { key: "contact" },
-        update: { value: body.contact },
-        create: { key: "contact", value: body.contact },
+        update: { value: body.contact as Prisma.InputJsonValue },
+        create: { key: "contact", value: body.contact as Prisma.InputJsonValue },
       });
     }
 
