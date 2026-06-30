@@ -21,6 +21,7 @@ import {
 } from "@/lib/admin-cms";
 import type { CmsAboutPage, CmsContactPage, CmsServicesPage } from "@/lib/cms-types";
 import { generateBlogReadingTime } from "@/lib/blog-utils";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { deleteAsset, getPublicAssetUrl, getStorageBucket, uploadAsset } from "@/lib/storage";
 
@@ -577,8 +578,8 @@ export async function saveBlogPostAction(formData: FormData) {
   const readingTime = generateBlogReadingTime(content);
   const data = {
     ...parsed,
-    content,
-    tags,
+    content: content as Prisma.InputJsonValue,
+    tags: tags as Prisma.InputJsonValue,
     coverMediaId: coverMediaId || null,
     coverImageUrl,
     readingTime,
