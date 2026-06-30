@@ -919,8 +919,8 @@ export async function saveAboutPageAction(formData: FormData) {
 
   await prisma.siteSetting.upsert({
     where: { key: "about_page" },
-    update: { value: aboutPage as unknown as Record<string, unknown> },
-    create: { key: "about_page", value: aboutPage as unknown as Record<string, unknown> },
+    update: { value: aboutPage as Prisma.InputJsonValue },
+    create: { key: "about_page", value: aboutPage as Prisma.InputJsonValue },
   });
 
   await logAudit({
@@ -952,8 +952,8 @@ export async function saveServicesPageAction(formData: FormData) {
 
   await prisma.siteSetting.upsert({
     where: { key: "services_page" },
-    update: { value: servicesPage as unknown as Record<string, unknown> },
-    create: { key: "services_page", value: servicesPage as unknown as Record<string, unknown> },
+    update: { value: servicesPage as Prisma.InputJsonValue },
+    create: { key: "services_page", value: servicesPage as Prisma.InputJsonValue },
   });
 
   await logAudit({
@@ -982,8 +982,8 @@ export async function saveContactPageAction(formData: FormData) {
 
   await prisma.siteSetting.upsert({
     where: { key: "contact_page" },
-    update: { value: contactPage as unknown as Record<string, unknown> },
-    create: { key: "contact_page", value: contactPage as unknown as Record<string, unknown> },
+    update: { value: contactPage as Prisma.InputJsonValue },
+    create: { key: "contact_page", value: contactPage as Prisma.InputJsonValue },
   });
 
   await logAudit({
