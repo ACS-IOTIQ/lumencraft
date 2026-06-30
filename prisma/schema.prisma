@@ -8,12 +8,33 @@ datasource db {
 }
 
 model AdminUser {
-  id           String   @id @default(cuid())
-  email        String   @unique
+  id           String     @id @default(cuid())
+  email        String     @unique
   passwordHash String
-  name         String   @default("Administrator")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  name         String     @default("Administrator")
+  role         String     @default("editor")
+  permissions  Json       @default("{}")
+  isActive     Boolean    @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  auditLogs    AuditLog[]
+}
+
+model AuditLog {
+  id          String     @id @default(cuid())
+  userId      String?
+  userEmail   String?
+  userName    String?
+  actionType  String
+  module      String
+  entityType  String?
+  entityId    String?
+  description String
+  metadata    Json       @default("{}")
+  ipAddress   String?
+  createdAt   DateTime   @default(now())
+  user        AdminUser? @relation(fields: [userId], references: [id], onDelete: SetNull)
 }
 
 model MediaAsset {
@@ -27,6 +48,7 @@ model MediaAsset {
   kind               String
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
+  blogPosts          BlogPost[]
   featuredProjects   FeaturedProject[]
   heroSlides         HeroSlide[]
   productDownloads   ProductDownload[]
@@ -186,4 +208,74 @@ model PublishedSnapshot {
   publishedAt DateTime @default(now())
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model BlogCategory {
+  id          String     @id @default(cuid())
+  name        String
+  slug        String     @unique
+  description String?
+  sortOrder   Int        @default(0)
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  posts       BlogPost[]
+}
+
+model BlogPost {
+  id             String        @id @default(cuid())
+  categoryId     String?
+  title          String
+  slug           String        @unique
+  excerpt        String?
+  content        Json          @default("{}")
+  coverImageUrl  String?
+  coverMediaId   String?
+  author         String        @default("Lumencraft Team")
+  tags           Json          @default("[]")
+  seoTitle       String?
+  seoDescription String?
+  seoImage       String?
+  readingTime    Int           @default(5)
+  isFeatured     Boolean       @default(false)
+  isActive       Boolean       @default(true)
+  sortOrder      Int           @default(0)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  category       BlogCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  coverMedia     MediaAsset?   @relation(fields: [coverMediaId], references: [id])
+}
+
+model ProjectCategory {
+  id        String    @id @default(cuid())
+  name      String
+  slug      String    @unique
+  sortOrder Int       @default(0)
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  projects  Project[]
+}
+
+model Project {
+  id               String          @id @default(cuid())
+  categoryId       String
+  name             String
+  slug             String          @unique
+  shortDescription String?
+  description      String
+  location         String
+  designer         String?
+  completionYear   String?
+  featuredImage    String
+  galleryImages    Json            @default("[]")
+  productsUsed     Json            @default("[]")
+  seoTitle         String?
+  seoDescription   String?
+  isFeatured       Boolean         @default(false)
+  isActive         Boolean         @default(true)
+  sortOrder        Int             @default(0)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  category         ProjectCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 }

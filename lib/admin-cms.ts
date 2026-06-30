@@ -1,12 +1,27 @@
 import type {
+  BlogCategory,
+  BlogPost,
   HeroSlide,
   MediaAsset,
   Product,
   ProductCategory,
   ProductDownload,
   ProductImage,
+  Project,
+  ProjectCategory,
 } from "@prisma/client";
-import type { CmsContact, CmsProduct, CmsSiteContent } from "@/lib/cms-types";
+import type {
+  CmsAboutPage,
+  CmsBlogCategory,
+  CmsBlogPost,
+  CmsContact,
+  CmsContactPage,
+  CmsProduct,
+  CmsProject,
+  CmsProjectCategory,
+  CmsServicesPage,
+  CmsSiteContent,
+} from "@/lib/cms-types";
 import { SITE_SNAPSHOT_KEY } from "@/lib/cms-data";
 import { fallbackSiteContent as seedContent } from "@/lib/cms-seed";
 import { prisma } from "@/lib/prisma";
@@ -53,6 +68,100 @@ export function serializeProduct(product: ProductWithRelations): CmsProduct {
     isFeatured: product.isFeatured,
     sortOrder: product.sortOrder,
   };
+}
+
+type BlogPostWithRelations = BlogPost & {
+  category: BlogCategory | null;
+};
+
+export function serializeBlogPost(post: BlogPostWithRelations): CmsBlogPost {
+  return {
+    id: post.id,
+    slug: post.slug,
+    title: post.title,
+    excerpt: post.excerpt ?? undefined,
+    content: (post.content ?? {}) as Record<string, unknown>,
+    coverImage: post.coverImageUrl ?? undefined,
+    author: post.author,
+    tags: jsonArray<string>(post.tags, []),
+    categoryId: post.categoryId ?? undefined,
+    categorySlug: post.category?.slug,
+    categoryName: post.category?.name,
+    seoTitle: post.seoTitle ?? undefined,
+    seoDescription: post.seoDescription ?? undefined,
+    seoImage: post.seoImage ?? undefined,
+    readingTime: post.readingTime,
+    isFeatured: post.isFeatured,
+    sortOrder: post.sortOrder,
+    createdAt: post.createdAt.toISOString(),
+  };
+}
+
+type ProjectWithCategory = Project & { category: ProjectCategory };
+
+export function serializeProject(project: ProjectWithCategory): CmsProject {
+  return {
+    id: project.id,
+    slug: project.slug,
+    name: project.name,
+    shortDescription: project.shortDescription ?? "",
+    description: project.description,
+    location: project.location,
+    designer: project.designer ?? undefined,
+    completionYear: project.completionYear ?? undefined,
+    categoryId: project.category.id,
+    categoryName: project.category.name,
+    categorySlug: project.category.slug,
+    featuredImage: project.featuredImage,
+    galleryImages: jsonArray<string>(project.galleryImages, []),
+    productsUsed: jsonArray<{ slug: string; name: string }>(project.productsUsed, []),
+    isFeatured: project.isFeatured,
+    sortOrder: project.sortOrder,
+  };
+}
+
+export async function getAdminProjects() {
+  return prisma.project.findMany({
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+    include: { category: true },
+  });
+}
+
+export async function getAdminProjectCategories() {
+  return prisma.projectCategory.findMany({ orderBy: { sortOrder: "asc" } });
+}
+
+export async function getProjectEditorData(projectId?: string) {
+  const [categories, project] = await Promise.all([
+    prisma.projectCategory.findMany({ orderBy: { sortOrder: "asc" } }),
+    projectId
+      ? prisma.project.findUnique({ where: { id: projectId }, include: { category: true } })
+      : null,
+  ]);
+  return { categories, project };
+}
+
+export async function getAdminBlogPosts() {
+  return prisma.blogPost.findMany({
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+    include: { category: true },
+  });
+}
+
+export async function getAdminBlogCategories() {
+  return prisma.blogCategory.findMany({ orderBy: { sortOrder: "asc" } });
+}
+
+export async function getBlogEditorData(postId?: string) {
+  const [categories, mediaAssets, post] = await Promise.all([
+    prisma.blogCategory.findMany({ orderBy: { sortOrder: "asc" } }),
+    prisma.mediaAsset.findMany({ where: { kind: "image" }, orderBy: { createdAt: "desc" } }),
+    postId
+      ? prisma.blogPost.findUnique({ where: { id: postId }, include: { category: true } })
+      : null,
+  ]);
+
+  return { categories, mediaAssets, post };
 }
 
 export async function seedDraftContent() {
@@ -139,56 +248,126 @@ export async function seedDraftContent() {
   await prisma.siteSetting.upsert({
     where: { key: "contact" },
     update: {},
-    create: {
-      key: "contact",
-      value: defaultContact,
-    },
+    create: { key: "contact", value: defaultContact },
   });
+
+  await prisma.siteSetting.upsert({
+    where: { key: "about_page" },
+    update: {},
+    create: { key: "about_page", value: seedContent.aboutPage as unknown as Record<string, unknown> },
+  });
+
+  await prisma.siteSetting.upsert({
+    where: { key: "services_page" },
+    update: {},
+    create: { key: "services_page", value: seedContent.servicesPage as unknown as Record<string, unknown> },
+  });
+
+  await prisma.siteSetting.upsert({
+    where: { key: "contact_page" },
+    update: {},
+    create: { key: "contact_page", value: seedContent.contactPage as unknown as Record<string, unknown> },
+  });
+
+  if ((await prisma.projectCategory.count()) === 0) {
+    await prisma.projectCategory.createMany({
+      data: seedContent.projectCategories.map((cat) => ({
+        name: cat.name,
+        slug: cat.slug,
+        sortOrder: cat.sortOrder,
+      })),
+    });
+  }
+
+  if ((await prisma.project.count()) === 0) {
+    const dbCategories = await prisma.projectCategory.findMany();
+    const slugToId = Object.fromEntries(dbCategories.map((c) => [c.slug, c.id]));
+    for (const project of seedContent.projects) {
+      const categoryId = slugToId[project.categorySlug];
+      if (!categoryId) continue;
+      await prisma.project.create({
+        data: {
+          categoryId,
+          name: project.name,
+          slug: project.slug,
+          shortDescription: project.shortDescription,
+          description: project.description,
+          location: project.location,
+          designer: project.designer,
+          completionYear: project.completionYear,
+          featuredImage: project.featuredImage,
+          galleryImages: project.galleryImages,
+          productsUsed: project.productsUsed,
+          isFeatured: project.isFeatured ?? false,
+          sortOrder: project.sortOrder ?? 0,
+        },
+      });
+    }
+  }
 }
 
 export async function serializeDraftSite(): Promise<CmsSiteContent> {
   await seedDraftContent();
 
-  const [categories, products, heroSlides, featuredProjects, partners, contactSetting] =
-    await Promise.all([
-      prisma.productCategory.findMany({
-        where: { isActive: true },
-        orderBy: { sortOrder: "asc" },
-        include: {
-          products: {
-            where: { isActive: true },
-            orderBy: { sortOrder: "asc" },
-            include: {
-              category: true,
-              images: true,
-              downloads: { include: { media: true } },
-            },
+  const [
+    categories,
+    products,
+    heroSlides,
+    featuredProjects,
+    partners,
+    contactSetting,
+    aboutPageSetting,
+    servicesPageSetting,
+    contactPageSetting,
+    blogCategories,
+    blogPosts,
+    projectCategories,
+    projects,
+  ] = await Promise.all([
+    prisma.productCategory.findMany({
+      where: { isActive: true },
+      orderBy: { sortOrder: "asc" },
+      include: {
+        products: {
+          where: { isActive: true },
+          orderBy: { sortOrder: "asc" },
+          include: {
+            category: true,
+            images: true,
+            downloads: { include: { media: true } },
           },
         },
-      }),
-      prisma.product.findMany({
-        where: { isActive: true },
-        orderBy: [{ category: { sortOrder: "asc" } }, { sortOrder: "asc" }],
-        include: {
-          category: true,
-          images: true,
-          downloads: { include: { media: true } },
-        },
-      }),
-      prisma.heroSlide.findMany({
-        where: { isActive: true },
-        orderBy: { sortOrder: "asc" },
-      }),
-      prisma.featuredProject.findMany({
-        where: { isActive: true },
-        orderBy: { sortOrder: "asc" },
-      }),
-      prisma.technologyPartner.findMany({
-        where: { isActive: true },
-        orderBy: { sortOrder: "asc" },
-      }),
-      prisma.siteSetting.findUnique({ where: { key: "contact" } }),
-    ]);
+      },
+    }),
+    prisma.product.findMany({
+      where: { isActive: true },
+      orderBy: [{ category: { sortOrder: "asc" } }, { sortOrder: "asc" }],
+      include: {
+        category: true,
+        images: true,
+        downloads: { include: { media: true } },
+      },
+    }),
+    prisma.heroSlide.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
+    prisma.featuredProject.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
+    prisma.technologyPartner.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
+    prisma.siteSetting.findUnique({ where: { key: "contact" } }),
+    prisma.siteSetting.findUnique({ where: { key: "about_page" } }),
+    prisma.siteSetting.findUnique({ where: { key: "services_page" } }),
+    prisma.siteSetting.findUnique({ where: { key: "contact_page" } }),
+    prisma.blogCategory.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
+    prisma.blogPost.findMany({
+      where: { isActive: true },
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+      include: { category: true },
+    }),
+    prisma.projectCategory.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
+    prisma.project.findMany({
+      where: { isActive: true },
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+      include: { category: true },
+    }),
+  ]);
 
   const serializedProducts = products.map((product) => serializeProduct(product));
 
@@ -222,6 +401,28 @@ export async function serializeDraftSite(): Promise<CmsSiteContent> {
       image: partner.imageUrl,
     })),
     contact: (contactSetting?.value as unknown as CmsContact) ?? defaultContact,
+    aboutPage: (aboutPageSetting?.value as unknown as CmsAboutPage) ?? seedContent.aboutPage,
+    servicesPage: (servicesPageSetting?.value as unknown as CmsServicesPage) ?? seedContent.servicesPage,
+    contactPage: (contactPageSetting?.value as unknown as CmsContactPage) ?? seedContent.contactPage,
+    blogCategories: (blogCategories as BlogCategory[]).map(
+      (cat): CmsBlogCategory => ({
+        id: cat.id,
+        name: cat.name,
+        slug: cat.slug,
+        description: cat.description ?? undefined,
+        sortOrder: cat.sortOrder,
+      }),
+    ),
+    blogPosts: (blogPosts as BlogPostWithRelations[]).map(serializeBlogPost),
+    projects: (projects as ProjectWithCategory[]).map(serializeProject),
+    projectCategories: (projectCategories as ProjectCategory[]).map(
+      (cat): CmsProjectCategory => ({
+        id: cat.id,
+        name: cat.name,
+        slug: cat.slug,
+        sortOrder: cat.sortOrder,
+      }),
+    ),
   };
 }
 
@@ -243,7 +444,7 @@ export async function getAdminDashboardData() {
       prisma.productCategory.count(),
       prisma.mediaAsset.count(),
       prisma.heroSlide.count(),
-      prisma.featuredProject.count(),
+      prisma.project.count(),
       prisma.technologyPartner.count(),
       prisma.publishedSnapshot.findUnique({ where: { key: SITE_SNAPSHOT_KEY } }),
     ]);
@@ -338,4 +539,22 @@ export async function getAdminOrFallbackDashboard() {
           : "Database is not reachable. Start Postgres and run Prisma migrations.",
     };
   }
+}
+
+export async function getAboutEditorData(): Promise<CmsAboutPage> {
+  await seedDraftContent();
+  const setting = await prisma.siteSetting.findUnique({ where: { key: "about_page" } });
+  return (setting?.value as unknown as CmsAboutPage) ?? seedContent.aboutPage;
+}
+
+export async function getServicesEditorData(): Promise<CmsServicesPage> {
+  await seedDraftContent();
+  const setting = await prisma.siteSetting.findUnique({ where: { key: "services_page" } });
+  return (setting?.value as unknown as CmsServicesPage) ?? seedContent.servicesPage;
+}
+
+export async function getContactPageEditorData(): Promise<CmsContactPage> {
+  await seedDraftContent();
+  const setting = await prisma.siteSetting.findUnique({ where: { key: "contact_page" } });
+  return (setting?.value as unknown as CmsContactPage) ?? seedContent.contactPage;
 }

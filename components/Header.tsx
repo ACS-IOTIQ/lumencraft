@@ -29,12 +29,12 @@ export default function Header({
   const activeCategory = productCategories.find((category) => category.id === activeProductCategory);
 
   const navItems = [
-    { label: "Company", href: "/#company" },
+    { label: "Company", href: "/about" },
     { label: "Products", href: "/products", hasDropdown: true },
-    { label: "Services", href: "/#services" },
-    { label: "Projects", href: "/#projects" },
-    { label: "Resources", href: "/#resources" },
-    { label: "Contact", href: "/#contact" },
+    { label: "Services", href: "/services" },
+    { label: "Projects", href: "/projects" },
+    { label: "Resources", href: "/resources" },
+    { label: "Contact", href: "/contact" },
   ];
 
   const closeProductsDropdown = useCallback(() => {

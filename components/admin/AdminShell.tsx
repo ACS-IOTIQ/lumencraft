@@ -14,7 +14,14 @@ export default function AdminShell({
     { href: "/admin/products", label: "Products" },
     { href: "/admin/categories", label: "Categories" },
     { href: "/admin/home", label: "Homepage" },
+    { href: "/admin/about", label: "About" },
+    { href: "/admin/services", label: "Services" },
+    { href: "/admin/contact", label: "Contact" },
+    { href: "/admin/projects", label: "Projects" },
+    { href: "/admin/resources", label: "Resources" },
     { href: "/admin/media", label: "Media" },
+    { href: "/admin/users", label: "Users" },
+    { href: "/admin/audit-logs", label: "Audit Logs" },
   ];
 
   return (
